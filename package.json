@@ -1,0 +1,14 @@
+{
+    "name": "com.storkstudios.datawaste",
+    "version": "0.0.1",
+    "displayName": "Data Waste",
+    "description": "wasteh",
+    "unity": "6000.0",
+    "author": {
+        "name": "Stork'Studios",
+        "url": "https://storkstudios.github.io/"
+    },
+    "dependencies": {
+        "com.storkstudios.corenest": "1.0.4"
+    }
+}
