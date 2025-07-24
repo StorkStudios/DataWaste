@@ -11,14 +11,14 @@ public class DataWaste
 
 	private readonly DataWasteWorker worker;
 
-	private DataWaste(Uri uri, string playerId)
+	private DataWaste(Uri uri, string playerId, string gameId)
 	{
-		worker = new DataWasteWorker(uri, playerId);
+		worker = new DataWasteWorker(uri, playerId, gameId);
 	}
 
-	public static void InitInstance(Uri uri, string playerId)
+	public static void InitInstance(Uri uri, string playerId, string gameId)
 	{
-		instance = new DataWaste(uri, playerId);
+		instance ??= new DataWaste(uri, playerId, gameId);
 	}
 
 	public Task<string> GetServerStatus()

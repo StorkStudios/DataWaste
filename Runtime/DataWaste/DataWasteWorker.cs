@@ -14,22 +14,24 @@ internal class DataWasteWorker
     private readonly Thread workerThread;
     private readonly BlockingCollection<MessageWrapper> messageQueue = new BlockingCollection<MessageWrapper>();
     private readonly string playerId;
+    private readonly string gameId;
     private readonly TaskCompletionSource<object> flushTask = new TaskCompletionSource<object>();
 
     private class GetDataMessage : IData
     {
-        private string message;
-        public object Data => message;
+        private string path;
+        public object Data => path;
 
-        public GetDataMessage(string message)
+        public GetDataMessage(string path)
         {
-            this.message = message;
+            this.path = path;
         }
     }
 
-    public DataWasteWorker(Uri uri, string playerId)
+    public DataWasteWorker(Uri uri, string playerId, string gameId)
     {
         this.playerId = playerId;
+        this.gameId = gameId;
         httpClient = new HttpClient()
         {
             BaseAddress = uri
@@ -130,8 +132,8 @@ internal class DataWasteWorker
     {
         try
         {
-            HttpContent content = CreateRequestBody(messageWrapper);
-            HttpResponseMessage response = await httpClient.PostAsync("telemetry", content);
+            HttpContent content = CreateTelemetryMessageBody(messageWrapper);
+            HttpResponseMessage response = await httpClient.PostAsync($"telemetry/{gameId}", content);
 
             if (messageWrapper.Task == null)
             {
@@ -159,8 +161,7 @@ internal class DataWasteWorker
     {
         try
         {
-            HttpContent content = CreateRequestBody(messageWrapper);
-            HttpResponseMessage response = await httpClient.PostAsync("getData", content);
+            HttpResponseMessage response = await httpClient.GetAsync($"extras/{gameId}/{messageWrapper.Content.Data}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -179,7 +180,7 @@ internal class DataWasteWorker
         }
     }
 
-    private HttpContent CreateRequestBody(MessageWrapper messageWrapper)
+    private HttpContent CreateTelemetryMessageBody(MessageWrapper messageWrapper)
     {
         Dictionary<string, object> data = new Dictionary<string, object>
         {

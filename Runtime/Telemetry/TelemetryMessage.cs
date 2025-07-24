@@ -17,7 +17,7 @@ public class TelemetryMessage : IData
     {
         if (data.ContainsKey(key))
         {
-            Log.Warning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
+            Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
         }
         data[key] = value ?? "";
         return this;
@@ -27,7 +27,7 @@ public class TelemetryMessage : IData
     {
         if (data.ContainsKey(key))
         {
-            Log.Warning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
+            Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
         }
         data[key] = value == null ? "" : value.ToString();
         return this;

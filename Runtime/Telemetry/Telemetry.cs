@@ -18,13 +18,17 @@ public class Telemetry : Singleton<Telemetry>
     [Header("Config")]
     [SerializeField]
     [Tooltip("This should be disabled during development, to limit load on the telemetry server")]
-    private bool enableTelemetry = false;
+    private bool enableTelemetry;
     [SerializeField]
-    private string telemetryServer = "";
+    private string telemetryServerAddress;
+    [SerializeField]
+    private string gameId;
 
     [Header("Debug")]
     [SerializeField]
-    private bool debugInfo = false;
+    private bool debugInfo;
+    [SerializeField]
+    private bool sendInitPackage = true;
 
     [SerializeField]
     [ReadOnly]
@@ -39,12 +43,12 @@ public class Telemetry : Singleton<Telemetry>
 
         string playerId = GetPlayerId();
 #if UNITY_EDITOR
-        Log.Warning("Telemetry is enabled - it should be only enabled in production builds!");
+        Debug.LogWarning("Telemetry is enabled - it should be only enabled in production builds!");
         playerId = "editor";
 #else
-        Log.Debug($"Telemetry running. PlayerId: {playerId}");
+        Debug.Log($"Telemetry running. PlayerId: {playerId}");
 #endif
-        DataWaste.InitInstance(new Uri(telemetryServer), playerId);
+        DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId);
 
         Init();
 
@@ -53,11 +57,11 @@ public class Telemetry : Singleton<Telemetry>
 
     private void Start()
     {
-        if (!enableTelemetry)
+        if (!enableTelemetry || !sendInitPackage)
         {
             return;
         }
-        SendAppliactionStartMessage();
+        SendApplicationStartMessage();
         SendSystemInfoMessage();
     }
 
@@ -99,7 +103,7 @@ public class Telemetry : Singleton<Telemetry>
                 serverStatus = ServerStatus.Online;
                 if (debugInfo)
                 {
-                    Log.Info("Telemetry server is running");
+                    Debug.Log("Telemetry server is running");
                 }
 
                 CheckNewGameVersion();
@@ -109,7 +113,7 @@ public class Telemetry : Singleton<Telemetry>
                 serverStatus = ServerStatus.Offline;
                 if (debugInfo)
                 {
-                    Log.Warning("Telemetry server is unavailable");
+                    Debug.LogWarning("Telemetry server is unavailable");
                 }
             }
         });
@@ -123,13 +127,13 @@ public class Telemetry : Singleton<Telemetry>
             GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(t.Result);
             if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
             {
-                Log.Info($"New game version is available - {gameVersion.VersionName}");
+                Debug.Log($"New game version is available - {gameVersion.VersionName}");
                 GameVersion.Instance.NewestAvailableVersion = gameVersion;
             }
         });
     }
 
-    private void SendAppliactionStartMessage()
+    private void SendApplicationStartMessage()
     {
         TelemetryMessage message = new TelemetryMessage("applicationStart");
         message.AddProperty("version", GameVersion.Instance.VersionText);
@@ -159,5 +163,26 @@ public class Telemetry : Singleton<Telemetry>
             PlayerPrefs.SetString("playerId", id);
             return id;
         }
+    }
+
+    [InvokeButton("Test server")]
+    private void TestServerStatus()
+    {
+        if (DataWaste.Instance == null)
+        {
+            DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId);
+        }
+        Task<string> task = DataWaste.Instance.GetServerStatus();
+        task.ContinueWith(t =>
+        {
+            if (t.Result == "OK")
+            {
+                Debug.Log("Telemetry server is running");
+            }
+            else
+            {
+                Debug.LogWarning("Telemetry server is unavailable");
+            }
+        });
     }
 }

@@ -9,6 +9,7 @@
         "url": "https://storkstudios.github.io/"
     },
     "dependencies": {
-        "com.storkstudios.corenest": "1.0.4"
+        "com.storkstudios.corenest": "1.0.4",
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
     }
 }
