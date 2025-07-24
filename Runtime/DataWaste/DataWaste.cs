@@ -28,10 +28,15 @@ public class DataWaste
 
 	public Task<string> GetNewestGameVersion()
 	{
-		return worker.GetNewestVersion();
+		return worker.GetData("version");
 	}
 
-	public void SendData(IData data)
+    public Task<string> GetData(string path)
+    {
+        return worker.GetData(path);
+    }
+
+    public void SendData(IData data)
 	{
 		worker.SendData(data);
 	}

@@ -53,10 +53,10 @@ internal class DataWasteWorker
         messageQueue.Add(new MessageWrapper(MessageWrapper.MessageType.SendData, data));
     }
 
-    public Task<string> GetNewestVersion()
+    public Task<string> GetData(string path)
     {
         TaskCompletionSource<string> completionSource = new TaskCompletionSource<string>();
-        messageQueue.Add(new MessageWrapper(MessageWrapper.MessageType.GetData, new GetDataMessage("version"), completionSource));
+        messageQueue.Add(new MessageWrapper(MessageWrapper.MessageType.GetData, new GetDataMessage(path), completionSource));
         return completionSource.Task;
     }
 

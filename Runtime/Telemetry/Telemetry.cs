@@ -93,6 +93,15 @@ public class Telemetry : Singleton<Telemetry>
         return DataWaste.Instance.GetServerStatus();
     }
 
+    public void GetData(string path, Action<string> callback)
+    {
+        Task<string> task = DataWaste.Instance.GetData(path);
+        task.ContinueWith(t =>
+        {
+            callback(t.Result);
+        });
+    }
+
     private void Init()
     {
         Task<string> task = DataWaste.Instance.GetServerStatus();
