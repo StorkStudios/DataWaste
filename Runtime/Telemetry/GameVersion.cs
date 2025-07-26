@@ -2,30 +2,34 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using StorkStudios.CoreNest;
 
-[CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
-public class GameVersionIndex : ScriptableObjectSingleton<GameVersion>
+namespace StorkStudios.DataWaste
 {
-    [SerializeField]
-    [Tooltip("Version number that should be incremented with every release. It is used to compare versions")]
-    private int versionIndex;
-    public int VersionIndex => versionIndex;
-
-    public event Action<GameVersionData> NewVersionAvailableEvent;
-
-    public GameVersionData NewestAvailableVersion
+    [CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
+    public class GameVersionIndex : ScriptableObjectSingleton<GameVersion>
     {
-        set
+        [SerializeField]
+        [Tooltip("Version number that should be incremented with every release. It is used to compare versions")]
+        private int versionIndex;
+        public int VersionIndex => versionIndex;
+
+        public event Action<GameVersionData> NewVersionAvailableEvent;
+
+        public GameVersionData NewestAvailableVersion
         {
-            if (newestAvailableVersion == null || value.VersionIndex != newestAvailableVersion.VersionIndex)
+            set
             {
-                NewVersionAvailableEvent?.Invoke(value);
+                if (newestAvailableVersion == null || value.VersionIndex != newestAvailableVersion.VersionIndex)
+                {
+                    NewVersionAvailableEvent?.Invoke(value);
+                }
+                newestAvailableVersion = value;
             }
-            newestAvailableVersion = value;
+
+            get => newestAvailableVersion;
         }
 
-        get => newestAvailableVersion;
+        private GameVersionData newestAvailableVersion;
     }
-
-    private GameVersionData newestAvailableVersion;
 }

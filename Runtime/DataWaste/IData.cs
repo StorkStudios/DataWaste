@@ -2,7 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface IData
+namespace StorkStudios.DataWaste
 {
-    public object Data { get; }
+    public interface IData
+    {
+        public object Data { get; }
+    }
 }
