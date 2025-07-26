@@ -2,39 +2,35 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using StorkStudios.CoreNest;
 
-namespace StorkStudios.DataWaste
+[CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
+public class GameVersion : ScriptableObjectSingleton<GameVersion>
 {
-    [CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
-    public class GameVersion : ScriptableObjectSingleton<GameVersion>
+    [SerializeField]
+    [Tooltip("Version name that is diplayed in game")]
+    private string versionText;
+    public string VersionText => versionText;
+
+    [SerializeField]
+    [Tooltip("Version number that should be incremented with every release. It is used to compare versions")]
+    private int versionIndex;
+    public int VersionIndex => versionIndex;
+
+    public event Action<GameVersionData> NewVersionAvailableEvent;
+
+    public GameVersionData NewestAvailableVersion
     {
-        [SerializeField]
-        [Tooltip("Version name that is diplayed in game")]
-        private string versionText;
-        public string VersionText => versionText;
-
-        [SerializeField]
-        [Tooltip("Version number that should be incremented with every release. It is used to compare versions")]
-        private int versionIndex;
-        public int VersionIndex => versionIndex;
-
-        public event Action<GameVersionData> NewVersionAvailableEvent;
-
-        public GameVersionData NewestAvailableVersion
+        set
         {
-            set
+            if (newestAvailableVersion == null || value.VersionIndex != newestAvailableVersion.VersionIndex)
             {
-                if (newestAvailableVersion == null || value.VersionIndex != newestAvailableVersion.VersionIndex)
-                {
-                    NewVersionAvailableEvent?.Invoke(value);
-                }
-                newestAvailableVersion = value;
+                NewVersionAvailableEvent?.Invoke(value);
             }
-
-            get => newestAvailableVersion;
+            newestAvailableVersion = value;
         }
 
-        private GameVersionData newestAvailableVersion;
+        get => newestAvailableVersion;
     }
+
+    private GameVersionData newestAvailableVersion;
 }

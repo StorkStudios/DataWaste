@@ -2,64 +2,61 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace StorkStudios.DataWaste
+public class TelemetryMessage : IData
 {
-    public class TelemetryMessage : IData
+    private Dictionary<string, string> data;
+
+    public object Data => data;
+
+    public TelemetryMessage(string type)
     {
-        private Dictionary<string, string> data;
+        data = new Dictionary<string, string> { { "type", type } };
+    }
 
-        public object Data => data;
-
-        public TelemetryMessage(string type)
+    public TelemetryMessage AddProperty(string key, string value)
+    {
+        if (data.ContainsKey(key))
         {
-            data = new Dictionary<string, string> { { "type", type } };
+            Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
         }
+        data[key] = value ?? "";
+        return this;
+    }
 
-        public TelemetryMessage AddProperty(string key, string value)
+    public TelemetryMessage AddProperty<T>(string key, T value)
+    {
+        if (data.ContainsKey(key))
         {
-            if (data.ContainsKey(key))
+            Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
+        }
+        data[key] = value == null ? "" : value.ToString();
+        return this;
+    }
+
+    public TelemetryMessage AddDictionaryProperty<T>(string key, Dictionary<string, T> dict)
+    {
+        if (dict != null && dict.Count != 0)
+        {
+            foreach (var (k, v) in dict)
             {
-                Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
+                AddProperty($"{key}.{k}", v);
             }
-            data[key] = value ?? "";
             return this;
         }
+        AddProperty(key, "");
+        return this;
+    }
 
-        public TelemetryMessage AddProperty<T>(string key, T value)
+    public TelemetryMessage AddEnumerableProperty<T>(string key, IEnumerable<T> enumerable)
+    {
+        if (enumerable != null)
         {
-            if (data.ContainsKey(key))
-            {
-                Debug.LogWarning($"Tried to add duplicate key to telemetry message. Current value: {data[key]}, new value: {value}");
-            }
-            data[key] = value == null ? "" : value.ToString();
-            return this;
+            AddProperty(key, string.Join(",", enumerable));
         }
-
-        public TelemetryMessage AddDictionaryProperty<T>(string key, Dictionary<string, T> dict)
+        else
         {
-            if (dict != null && dict.Count != 0)
-            {
-                foreach (var (k, v) in dict)
-                {
-                    AddProperty($"{key}.{k}", v);
-                }
-                return this;
-            }
             AddProperty(key, "");
-            return this;
         }
-
-        public TelemetryMessage AddEnumerableProperty<T>(string key, IEnumerable<T> enumerable)
-        {
-            if (enumerable != null)
-            {
-                AddProperty(key, string.Join(",", enumerable));
-            }
-            else
-            {
-                AddProperty(key, "");
-            }
-            return this;
-        }
+        return this;
     }
 }
