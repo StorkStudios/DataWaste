@@ -51,7 +51,7 @@ namespace StorkStudios.DataWaste
 #else
         Debug.Log($"Telemetry running. PlayerId: {playerId}");
 #endif
-            DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId);
+            DataWaste.InitInstance(new Uri(telemetryServerAddress), playerId, gameId);
 
             Init();
 
