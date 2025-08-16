@@ -3,5 +3,5 @@ using UnityEngine;
 
 public interface ITelemetryErrorHandler
 {
-    public void HandleError(Exception exception);
+    public void HandleError(string errorText);
 }

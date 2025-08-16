@@ -5,8 +5,8 @@ using StorkStudios.CoreNest;
 [CreateAssetMenu(fileName = "DebugLogTelemetryErrorHandler", menuName = "StorkStudios/DataWaste/DebugLogTelemetryErrorHandler")]
 public class DebugLogTelemetryErrorHandler : ScriptableObjectSingleton<DebugLogTelemetryErrorHandler>, ITelemetryErrorHandler
 {
-    public void HandleError(Exception exception)
+    public void HandleError(string errorText)
     {
-        Debug.LogError($"Telemetry Error: {exception.Message}\n{exception.StackTrace}");
+        Debug.LogError($"Telemetry Error: {errorText}");
     }
 }

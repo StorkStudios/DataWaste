@@ -3,9 +3,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading.Tasks;
 using UnityEngine;
 using StorkStudios.CoreNest;
+using UnityEngine.Networking;
 
 namespace StorkStudios.DataWaste
 {
@@ -27,7 +27,7 @@ namespace StorkStudios.DataWaste
         [SerializeField]
         private string gameId;
         [SerializeField]
-        private float timeout;
+        private int timeout;
 
         [SerializeField]
         [RequireInterface(typeof(ITelemetryErrorHandler))]
@@ -59,8 +59,6 @@ namespace StorkStudios.DataWaste
 #else
         Debug.Log($"Telemetry running. PlayerId: {playerId}");
 #endif
-            DataWaste.InitInstance(new Uri(telemetryServerAddress), playerId, gameId, timeout);
-
             Init();
 
             base.Awake();
@@ -84,7 +82,6 @@ namespace StorkStudios.DataWaste
             }
 
             SendTelemetryMessage(new TelemetryMessage("applicationQuit"));
-            DataWaste.Instance.FlushAndFinish();
         }
 
         public void SendTelemetryMessage(TelemetryMessage message)
@@ -96,80 +93,94 @@ namespace StorkStudios.DataWaste
             {
                 return;
             }
-            DataWaste.Instance.SendData(message);
-        }
-
-        public Task<string> GetServerStatus()
-        {
-            return DataWaste.Instance.GetServerStatus();
+            UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
+                JsonConvert.SerializeObject(message),
+                "application/json");
+            StartCoroutine(HandleRequest(request));
         }
 
         public void GetData(string path, Action<string> callback)
         {
-            Task<string> task = DataWaste.Instance.GetData(path);
-            task.ContinueWith(t =>
+            if (!enableTelemetry || serverStatus == ServerStatus.Offline)
             {
-                if (t.IsCompletedSuccessfully)
+                return;
+            }
+
+            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/{path}");
+            StartCoroutine(HandleRequest(request, (result) =>
+            {
+                callback(result);
+            }));
+        }
+
+        private IEnumerator HandleRequest(UnityWebRequest request, Action<string> callback)
+        {
+            request.timeout = timeout;
+
+            yield return request.SendWebRequest();
+            
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                callback(request.downloadHandler.text);
+            }
+            else
+            {
+                if (TelemetryErrorHandler != null)
                 {
-                    callback(t.Result);
+                    TelemetryErrorHandler.HandleError(request.error);
                 }
-                else if (TelemetryErrorHandler != null)
-                {
-                    TelemetryErrorHandler.HandleError(t.Exception);
-                }
-            });
+                callback(null);
+            }
+        }
+
+        private IEnumerator HandleRequest(UnityWebRequest request)
+        {
+            request.timeout = timeout;
+            yield return request.SendWebRequest();
         }
 
         private void Init()
         {
-            Task<string> task = DataWaste.Instance.GetServerStatus();
-            task.ContinueWith(t =>
+            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + "/status");
+            StartCoroutine(HandleRequest(request, (result) =>
             {
-                if (t.IsCompletedSuccessfully)
+                if (result == null)
                 {
-                    if (t.Result == "OK")
+                    serverStatus = ServerStatus.Offline;
+                    if (debugInfo)
                     {
-                        serverStatus = ServerStatus.Online;
-                        if (debugInfo)
-                        {
-                            Debug.Log("Telemetry server is running");
-                        }
-
-                        CheckNewGameVersion();
-                        return;
+                        Debug.LogWarning("Telemetry server is unavailable");
                     }
                 }
-                serverStatus = ServerStatus.Offline;
-                if (debugInfo)
+                else
                 {
-                    Debug.LogWarning("Telemetry server is unavailable");
+                    serverStatus = ServerStatus.Online;
+                    if (debugInfo)
+                    {
+                        Debug.Log("Telemetry server is running");
+                    }
+                    CheckNewGameVersion();
                 }
-                if (t.IsFaulted && TelemetryErrorHandler != null)
-                {
-                    TelemetryErrorHandler.HandleError(t.Exception);
-                }
-            });
+            }));
         }
 
         private void CheckNewGameVersion()
         {
-            Task<string> task = DataWaste.Instance.GetNewestGameVersion();
-            task.ContinueWith(t =>
+            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/version");
+            StartCoroutine(HandleRequest(request, (result) =>
             {
-                if (t.IsCompletedSuccessfully)
+                if (result == null)
                 {
-                    GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(t.Result);
-                    if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
-                    {
-                        Debug.Log($"New game version is available - {gameVersion.VersionName}");
-                        GameVersion.Instance.NewestAvailableVersion = gameVersion;
-                    }
+                    return;
                 }
-                else if (TelemetryErrorHandler != null)
+
+                GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(result);
+                if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
                 {
-                    TelemetryErrorHandler.HandleError(t.Exception);
+                    Debug.Log($"New game version is available - {gameVersion.VersionName}");
+                    GameVersion.Instance.NewestAvailableVersion = gameVersion;
                 }
-            });
+            }));
         }
 
         private void SendApplicationStartMessage()
@@ -207,27 +218,18 @@ namespace StorkStudios.DataWaste
         [InvokeButton("Test server")]
         private void TestServerStatus()
         {
-            if (DataWaste.Instance == null)
+            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + "/status");
+            StartCoroutine(HandleRequest(request, (result) =>
             {
-                DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId, timeout);
-            }
-            Task<string> task = DataWaste.Instance.GetServerStatus();
-            task.ContinueWith(t =>
-            {
-                if (t.IsCompletedSuccessfully)
+                if (result == null)
                 {
-                    if (t.Result == "OK")
-                    {
-                        Debug.Log("Telemetry server is running");
-                        return;
-                    }
+                    Debug.LogWarning("Telemetry server is unavailable");
                 }
-                Debug.LogWarning("Telemetry server is unavailable");
-                if (t.IsFaulted && TelemetryErrorHandler != null)
+                else
                 {
-                    TelemetryErrorHandler.HandleError(t.Exception);
+                    Debug.Log("Telemetry server is running");
                 }
-            });
+            }));
         }
     }
 }
