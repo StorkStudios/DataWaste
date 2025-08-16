@@ -29,6 +29,10 @@ namespace StorkStudios.DataWaste
         [SerializeField]
         private float timeout;
 
+        [SerializeField]
+        [RequireInterface(typeof(ITelemetryErrorHandler))]
+        private UnityEngine.Object telemetryErrorHandler;
+
         [Header("Debug")]
         [SerializeField]
         private bool debugInfo;
@@ -38,6 +42,8 @@ namespace StorkStudios.DataWaste
         [SerializeField]
         [ReadOnly]
         private ServerStatus serverStatus = ServerStatus.Unknown;
+
+        private ITelemetryErrorHandler TelemetryErrorHandler => telemetryErrorHandler as ITelemetryErrorHandler;
 
         protected override void Awake()
         {
@@ -103,7 +109,14 @@ namespace StorkStudios.DataWaste
             Task<string> task = DataWaste.Instance.GetData(path);
             task.ContinueWith(t =>
             {
-                callback(t.Result);
+                if (t.IsCompletedSuccessfully)
+                {
+                    callback(t.Result);
+                }
+                else if (TelemetryErrorHandler != null)
+                {
+                    TelemetryErrorHandler.HandleError(t.Exception);
+                }
             });
         }
 
@@ -112,23 +125,28 @@ namespace StorkStudios.DataWaste
             Task<string> task = DataWaste.Instance.GetServerStatus();
             task.ContinueWith(t =>
             {
-                if (t.Result == "OK")
+                if (t.IsCompletedSuccessfully)
                 {
-                    serverStatus = ServerStatus.Online;
-                    if (debugInfo)
+                    if (t.Result == "OK")
                     {
-                        Debug.Log("Telemetry server is running");
-                    }
+                        serverStatus = ServerStatus.Online;
+                        if (debugInfo)
+                        {
+                            Debug.Log("Telemetry server is running");
+                        }
 
-                    CheckNewGameVersion();
-                }
-                else
-                {
-                    serverStatus = ServerStatus.Offline;
-                    if (debugInfo)
-                    {
-                        Debug.LogWarning("Telemetry server is unavailable");
+                        CheckNewGameVersion();
+                        return;
                     }
+                }
+                serverStatus = ServerStatus.Offline;
+                if (debugInfo)
+                {
+                    Debug.LogWarning("Telemetry server is unavailable");
+                }
+                if (t.IsFaulted && TelemetryErrorHandler != null)
+                {
+                    TelemetryErrorHandler.HandleError(t.Exception);
                 }
             });
         }
@@ -138,11 +156,18 @@ namespace StorkStudios.DataWaste
             Task<string> task = DataWaste.Instance.GetNewestGameVersion();
             task.ContinueWith(t =>
             {
-                GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(t.Result);
-                if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
+                if (t.IsCompletedSuccessfully)
                 {
-                    Debug.Log($"New game version is available - {gameVersion.VersionName}");
-                    GameVersion.Instance.NewestAvailableVersion = gameVersion;
+                    GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(t.Result);
+                    if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
+                    {
+                        Debug.Log($"New game version is available - {gameVersion.VersionName}");
+                        GameVersion.Instance.NewestAvailableVersion = gameVersion;
+                    }
+                }
+                else if (TelemetryErrorHandler != null)
+                {
+                    TelemetryErrorHandler.HandleError(t.Exception);
                 }
             });
         }
@@ -189,13 +214,18 @@ namespace StorkStudios.DataWaste
             Task<string> task = DataWaste.Instance.GetServerStatus();
             task.ContinueWith(t =>
             {
-                if (t.Result == "OK")
+                if (t.IsCompletedSuccessfully)
                 {
-                    Debug.Log("Telemetry server is running");
+                    if (t.Result == "OK")
+                    {
+                        Debug.Log("Telemetry server is running");
+                        return;
+                    }
                 }
-                else
+                Debug.LogWarning("Telemetry server is unavailable");
+                if (t.IsFaulted && TelemetryErrorHandler != null)
                 {
-                    Debug.LogWarning("Telemetry server is unavailable");
+                    TelemetryErrorHandler.HandleError(t.Exception);
                 }
             });
         }
