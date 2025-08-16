@@ -26,6 +26,8 @@ namespace StorkStudios.DataWaste
         private string telemetryServerAddress;
         [SerializeField]
         private string gameId;
+        [SerializeField]
+        private float timeout;
 
         [Header("Debug")]
         [SerializeField]
@@ -51,7 +53,7 @@ namespace StorkStudios.DataWaste
 #else
         Debug.Log($"Telemetry running. PlayerId: {playerId}");
 #endif
-            DataWaste.InitInstance(new Uri(telemetryServerAddress), playerId, gameId);
+            DataWaste.InitInstance(new Uri(telemetryServerAddress), playerId, gameId, timeout);
 
             Init();
 
@@ -182,7 +184,7 @@ namespace StorkStudios.DataWaste
         {
             if (DataWaste.Instance == null)
             {
-                DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId);
+                DataWaste.InitInstance(new Uri(telemetryServerAddress), telemetryServerAddress, gameId, timeout);
             }
             Task<string> task = DataWaste.Instance.GetServerStatus();
             task.ContinueWith(t =>

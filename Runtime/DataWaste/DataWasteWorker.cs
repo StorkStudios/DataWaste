@@ -30,13 +30,14 @@ namespace StorkStudios.DataWaste
             }
         }
 
-        public DataWasteWorker(Uri uri, string playerId, string gameId)
+        public DataWasteWorker(Uri uri, string playerId, string gameId, float timeout)
         {
             this.playerId = playerId;
             this.gameId = gameId;
             httpClient = new HttpClient()
             {
-                BaseAddress = uri
+                BaseAddress = uri,
+                Timeout = TimeSpan.FromSeconds(timeout)
             };
 
             workerThread = new Thread(WorkerLoop);
@@ -121,8 +122,9 @@ namespace StorkStudios.DataWaste
                     return;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                messageWrapper.Task.SetException(e);
             }
             finally
             {
@@ -149,9 +151,9 @@ namespace StorkStudios.DataWaste
                     return;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                messageWrapper.Task.SetException(e);
             }
             finally
             {
@@ -172,9 +174,9 @@ namespace StorkStudios.DataWaste
                     return;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                messageWrapper.Task.SetException(e);
             }
             finally
             {

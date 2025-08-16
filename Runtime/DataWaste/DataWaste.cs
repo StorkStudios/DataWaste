@@ -13,14 +13,14 @@ namespace StorkStudios.DataWaste
 
         private readonly DataWasteWorker worker;
 
-        private DataWaste(Uri uri, string playerId, string gameId)
+        private DataWaste(Uri uri, string playerId, string gameId, float timeout)
         {
-            worker = new DataWasteWorker(uri, playerId, gameId);
+            worker = new DataWasteWorker(uri, playerId, gameId, timeout);
         }
 
-        public static void InitInstance(Uri uri, string playerId, string gameId)
+        public static void InitInstance(Uri uri, string playerId, string gameId, float timeout)
         {
-            instance ??= new DataWaste(uri, playerId, gameId);
+            instance ??= new DataWaste(uri, playerId, gameId, timeout);
         }
 
         public Task<string> GetServerStatus()
