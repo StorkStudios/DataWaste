@@ -103,7 +103,7 @@ namespace StorkStudios.DataWaste
                 { "data", message.Data }
             };
             UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
-                JsonConvert.SerializeObject(message),
+                JsonConvert.SerializeObject(data),
                 "application/json");
             StartCoroutine(HandleRequest(request));
         }
