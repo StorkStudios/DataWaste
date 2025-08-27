@@ -43,6 +43,8 @@ namespace StorkStudios.DataWaste
         [ReadOnly]
         private ServerStatus serverStatus = ServerStatus.Unknown;
 
+        private string playerId;
+
         private ITelemetryErrorHandler TelemetryErrorHandler => telemetryErrorHandler as ITelemetryErrorHandler;
 
         protected override void Awake()
@@ -52,12 +54,12 @@ namespace StorkStudios.DataWaste
                 return;
             }
 
-            string playerId = GetPlayerId();
 #if UNITY_EDITOR
             Debug.LogWarning("Telemetry is enabled - it should be only enabled in production builds!");
             playerId = "editor";
 #else
-        Debug.Log($"Telemetry running. PlayerId: {playerId}");
+            playerId = GetPlayerId();
+            Debug.Log($"Telemetry running. PlayerId: {playerId}");
 #endif
             Init();
 
@@ -93,6 +95,13 @@ namespace StorkStudios.DataWaste
             {
                 return;
             }
+
+            Dictionary<string, object> data = new Dictionary<string, object>
+            {
+                { "playerId", playerId },
+                { "timestamp", DateTime.UtcNow },
+                { "data", message.Data }
+            };
             UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
                 JsonConvert.SerializeObject(message),
                 "application/json");
