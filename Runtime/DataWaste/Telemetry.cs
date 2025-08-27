@@ -137,6 +137,14 @@ namespace StorkStudios.DataWaste
         {
             request.timeout = timeout;
             yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                if (TelemetryErrorHandler != null)
+                {
+                    TelemetryErrorHandler.HandleError(request.error);
+                }
+            }
         }
 
         private void Init()
