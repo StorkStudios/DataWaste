@@ -30,8 +30,9 @@ namespace StorkStudios.DataWaste
         private int timeout;
 
         [SerializeField]
-        [RequireInterface(typeof(ITelemetryErrorHandler))]
-        private UnityEngine.Object telemetryErrorHandler;
+        [RequireInterface(typeof(ITelemetryDebugHandler))]
+        [NotNull]
+        private ScriptableObject telemetryErrorHandler;
 
         [Header("Debug")]
         [SerializeField]
@@ -45,7 +46,7 @@ namespace StorkStudios.DataWaste
 
         private string playerId;
 
-        private ITelemetryErrorHandler TelemetryErrorHandler => telemetryErrorHandler as ITelemetryErrorHandler;
+        private ITelemetryDebugHandler TelemetryDebugHandler => telemetryErrorHandler as ITelemetryDebugHandler;
 
         protected override void Awake()
         {
@@ -55,11 +56,17 @@ namespace StorkStudios.DataWaste
             }
 
 #if UNITY_EDITOR
-            Debug.LogWarning("Telemetry is enabled - it should be only enabled in production builds!");
+            if (TelemetryDebugHandler != null)
+            {
+                TelemetryDebugHandler.OnWarning("Telemetry is enabled - it should be only enabled in production builds!");
+            }
             playerId = "editor";
 #else
             playerId = GetPlayerId();
-            Debug.Log($"Telemetry running. PlayerId: {playerId}");
+            if (TelemetryDebugHandler != null)
+            {
+                TelemetryDebugHandler.OnInfo($"Telemetry running. PlayerId: {playerId}");
+            }
 #endif
             Init();
 
@@ -108,7 +115,7 @@ namespace StorkStudios.DataWaste
             StartCoroutine(HandleRequest(request));
         }
 
-        public void GetData(string path, Action<string> callback)
+        public void GetData(string path, Action<string> callback, Action<string> errorCallback = null)
         {
             if (!enableTelemetry || serverStatus == ServerStatus.Offline)
             {
@@ -116,42 +123,39 @@ namespace StorkStudios.DataWaste
             }
 
             UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/{path}");
-            StartCoroutine(HandleRequest(request, (result) =>
-            {
-                callback(result);
-            }));
+            StartCoroutine(HandleRequest(request,
+                (result) =>
+                {
+                    callback(result);
+                },
+                errorCallback));
         }
 
-        private IEnumerator HandleRequest(UnityWebRequest request, Action<string> callback)
+        private IEnumerator HandleRequest(UnityWebRequest request, Action<string> callback = null, Action<string> errorCallback = null)
         {
             request.timeout = timeout;
 
             yield return request.SendWebRequest();
-            
+
             if (request.result == UnityWebRequest.Result.Success)
             {
-                callback(request.downloadHandler.text);
+                if (callback != null)
+                {
+                    callback(request.downloadHandler.text);
+                }
             }
             else
             {
-                if (TelemetryErrorHandler != null)
+                if (errorCallback != null)
                 {
-                    TelemetryErrorHandler.HandleError(request.error);
+                    errorCallback(request.error);
                 }
-                callback(null);
-            }
-        }
-
-        private IEnumerator HandleRequest(UnityWebRequest request)
-        {
-            request.timeout = timeout;
-            yield return request.SendWebRequest();
-
-            if (request.result != UnityWebRequest.Result.Success)
-            {
-                if (TelemetryErrorHandler != null)
+                else
                 {
-                    TelemetryErrorHandler.HandleError(request.error);
+                    if (TelemetryDebugHandler != null)
+                    {
+                        TelemetryDebugHandler.OnError(request.error);
+                    }
                 }
             }
         }
@@ -164,17 +168,17 @@ namespace StorkStudios.DataWaste
                 if (result == null)
                 {
                     serverStatus = ServerStatus.Offline;
-                    if (debugInfo)
+                    if (debugInfo && TelemetryDebugHandler != null)
                     {
-                        Debug.LogWarning("Telemetry server is unavailable");
+                        TelemetryDebugHandler.OnWarning("Telemetry server is unavailable");
                     }
                 }
                 else
                 {
                     serverStatus = ServerStatus.Online;
-                    if (debugInfo)
+                    if (debugInfo && TelemetryDebugHandler != null)
                     {
-                        Debug.Log("Telemetry server is running");
+                        TelemetryDebugHandler.OnInfo("Telemetry server is running");
                     }
                     CheckNewGameVersion();
                 }
@@ -194,7 +198,10 @@ namespace StorkStudios.DataWaste
                 GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(result);
                 if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
                 {
-                    Debug.Log($"New game version is available - {gameVersion.VersionName}");
+                    if (TelemetryDebugHandler != null)
+                    {
+                        TelemetryDebugHandler.OnInfo($"New game version is available - {gameVersion.VersionName}");
+                    }
                     GameVersion.Instance.NewestAvailableVersion = gameVersion;
                 }
             }));
@@ -240,11 +247,17 @@ namespace StorkStudios.DataWaste
             {
                 if (result == null)
                 {
-                    Debug.LogWarning("Telemetry server is unavailable");
+                    if (TelemetryDebugHandler != null)
+                    {
+                        TelemetryDebugHandler.OnWarning("Telemetry server is unavailable");
+                    }
                 }
                 else
                 {
-                    Debug.Log("Telemetry server is running");
+                    if (TelemetryDebugHandler != null)
+                    {
+                        TelemetryDebugHandler.OnInfo("Telemetry server is running");
+                    }
                 }
             }));
         }
