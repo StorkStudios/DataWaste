@@ -19,7 +19,7 @@ namespace StorkStudios.DataWaste
 
         public void OnWarning(string message)
         {
-            Debug.Log($"Telemetry warining: {message}");
+            Debug.LogWarning($"Telemetry warining: {message}");
         }
     }
 }
