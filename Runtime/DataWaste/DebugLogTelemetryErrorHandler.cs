@@ -2,21 +2,24 @@ using UnityEngine;
 using System;
 using StorkStudios.CoreNest;
 
-[CreateAssetMenu(fileName = "DebugLogTelemetryErrorHandler", menuName = "StorkStudios/DataWaste/DebugLogTelemetryErrorHandler")]
-public class DebugLogTelemetryErrorHandler : ScriptableObjectSingleton<DebugLogTelemetryErrorHandler>, ITelemetryDebugHandler
+namespace StorkStudios.DataWaste
 {
-    public void OnError(string message)
+    [CreateAssetMenu(fileName = "DebugLogTelemetryErrorHandler", menuName = "StorkStudios/DataWaste/DebugLogTelemetryErrorHandler")]
+    public class DebugLogTelemetryErrorHandler : ScriptableObjectSingleton<DebugLogTelemetryErrorHandler>, ITelemetryDebugHandler
     {
-        Debug.LogError($"Telemetry error: {message}");
-    }
+        public void OnError(string message)
+        {
+            Debug.LogError($"Telemetry error: {message}");
+        }
 
-    public void OnInfo(string message)
-    {
-        Debug.Log($"Telemetry info: {message}");
-    }
+        public void OnInfo(string message)
+        {
+            Debug.Log($"Telemetry info: {message}");
+        }
 
-    public void OnWarning(string message)
-    {
-        Debug.Log($"Telemetry warining: {message}");
+        public void OnWarning(string message)
+        {
+            Debug.Log($"Telemetry warining: {message}");
+        }
     }
 }
