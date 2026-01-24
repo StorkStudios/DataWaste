@@ -48,6 +48,10 @@ namespace StorkStudios.DataWaste
 
         private ITelemetryDebugHandler TelemetryDebugHandler => telemetryErrorHandler as ITelemetryDebugHandler;
 
+        public Action<Dictionary<string, object>> PreSendProcessor { set => preSendProcessor = value; }
+
+        private Action<Dictionary<string, object>> preSendProcessor;
+
         protected override void Awake()
         {
             if (!enableTelemetry)
@@ -109,6 +113,7 @@ namespace StorkStudios.DataWaste
                 { "timestamp", DateTime.UtcNow },
                 { "data", message.Data }
             };
+            preSendProcessor?.Invoke(data);
             UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
                 JsonConvert.SerializeObject(data),
                 "application/json");
