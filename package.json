@@ -1,6 +1,6 @@
 {
     "name": "com.storkstudios.datawaste",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "displayName": "Data Waste",
     "description": "wasteh",
     "unity": "6000.0",
@@ -9,7 +9,7 @@
         "url": "https://storkstudios.github.io/"
     },
     "dependencies": {
-        "com.storkstudios.corenest": "1.0.6",
+        "com.storkstudios.corenest": "1.0.12",
         "com.unity.nuget.newtonsoft-json": "3.2.1"
     }
 }
