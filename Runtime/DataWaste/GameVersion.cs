@@ -6,7 +6,7 @@ using StorkStudios.CoreNest;
 
 namespace StorkStudios.DataWaste
 {
-    [CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
+    [CreateAssetMenu(fileName = "GameVersion", menuName = "StorkStudios/DataWaste/Game version")]
     public class GameVersion : ScriptableObjectSingleton<GameVersion>
     {
         [SerializeField]

@@ -34,11 +34,16 @@ namespace StorkStudios.DataWaste
         [NotNull]
         private ScriptableObject telemetryErrorHandler;
 
+        [Header("Sent data")]
+        [SerializeField]
+        [Tooltip("Check if there is a new game version available on the server and send game version in init package. Requires GameVersion singleton to be present in the project.")]
+        private bool handleGameVersion;
+        [SerializeField]
+        private bool sendInitPackage = true;
+
         [Header("Debug")]
         [SerializeField]
         private bool debugInfo;
-        [SerializeField]
-        private bool sendInitPackage = true;
 
         [SerializeField]
         [ReadOnly]
@@ -185,13 +190,24 @@ namespace StorkStudios.DataWaste
                     {
                         TelemetryDebugHandler.OnInfo("Telemetry server is running");
                     }
-                    CheckNewGameVersion();
+                    if (handleGameVersion)
+                    {
+                        CheckNewGameVersion();
+                    }
                 }
             }));
         }
 
         private void CheckNewGameVersion()
         {
+            if (GameVersion.Instance == null)
+            {
+                if (TelemetryDebugHandler != null)
+                {
+                    TelemetryDebugHandler.OnError("GameVersion singleton not found, can't check game version. Disable version handling or create GameVersion singleton in Resources folder.");
+                }
+                return;
+            }
             UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/version");
             StartCoroutine(HandleRequest(request, (result) =>
             {
@@ -215,7 +231,10 @@ namespace StorkStudios.DataWaste
         private void SendApplicationStartMessage()
         {
             TelemetryMessage message = new TelemetryMessage("applicationStart");
-            message.AddProperty("version", GameVersion.Instance.VersionText);
+            if (handleGameVersion && GameVersion.Instance != null)
+            {
+                message.AddProperty("gameVersion", GameVersion.Instance.VersionText);
+            }
             SendTelemetryMessage(message);
         }
 
