@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1816441743670810904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7653246785609812781}
+  - component: {fileID: 1282249570237109320}
+  m_Layer: 0
+  m_Name: Telemetry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7653246785609812781
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1816441743670810904}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1282249570237109320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1816441743670810904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e670cdbb578e8147aad064cf2f0e8ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableTelemetry: 0
+  telemetryServerAddress: 
+  gameId: 
+  timeout: 100
+  plugins:
+  - {fileID: 11400000, guid: 3644ffd6c03ecb54897c8ef3d85f720a, type: 2}
+  - {fileID: 11400000, guid: c46bf5c9bbc4f6d45b05e9905c03d972, type: 2}
+  - {fileID: 11400000, guid: ebaedf57319c607448a9873208285748, type: 2}
+  - {fileID: 11400000, guid: 673ec2a0b3cfe9543870d71a71a86515, type: 2}
+  telemetryErrorHandler: {fileID: 11400000, guid: 6836188e519c3ad45a8d005e0e66243f, type: 2}
+  sendInitPackage: 1
+  debugInfo: 1
+  serverStatus: 0

@@ -3,7 +3,7 @@ using StorkStudios.CoreNest;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -70,7 +70,7 @@ namespace StorkStudios.DataWaste
             }
 #endif
             Init();
-            foreach (ITelemetryPlugin plugin in plugins)
+            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnTelemetryInitialized();
             }
@@ -84,8 +84,8 @@ namespace StorkStudios.DataWaste
             {
                 return;
             }
+
             SendApplicationStartMessage();
-            SendSystemInfoMessage();
         }
 
         private void OnApplicationQuit()
@@ -100,7 +100,7 @@ namespace StorkStudios.DataWaste
 
         protected override void OnDestroy()
         {
-            foreach (ITelemetryPlugin plugin in plugins)
+            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnBeforeTelemetryDestroyed();
             }
@@ -116,7 +116,7 @@ namespace StorkStudios.DataWaste
                 return;
             }
 
-            foreach (ITelemetryPlugin plugin in plugins)
+            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnBeforeMessageSent(message);
             }
@@ -216,17 +216,6 @@ namespace StorkStudios.DataWaste
         private void SendApplicationStartMessage()
         {
             TelemetryMessage message = new TelemetryMessage(TelemetryMessageType.ApplicationStart);
-            SendTelemetryMessage(message);
-        }
-
-        private void SendSystemInfoMessage()
-        {
-            TelemetryMessage message = new TelemetryMessage(TelemetryMessageType.SystemInfo);
-            Type systemInfoType = typeof(SystemInfo);
-            foreach (PropertyInfo info in systemInfoType.GetProperties(BindingFlags.Public | BindingFlags.Static))
-            {
-                message.AddProperty(info.Name, info.GetValue(systemInfoType, null).ToString());
-            }
             SendTelemetryMessage(message);
         }
 
