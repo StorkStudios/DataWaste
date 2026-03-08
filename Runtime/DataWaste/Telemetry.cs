@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
+using StorkStudios.CoreNest;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using StorkStudios.CoreNest;
 using UnityEngine.Networking;
 
 namespace StorkStudios.DataWaste
@@ -28,6 +28,9 @@ namespace StorkStudios.DataWaste
         private string gameId;
         [SerializeField]
         private int timeout;
+        [SerializeField]
+        [RequireInterface(typeof(ITelemetryPlugin))]
+        private List<ScriptableObject> plugins;
 
         [SerializeField]
         [RequireInterface(typeof(ITelemetryDebugHandler))]
@@ -35,9 +38,6 @@ namespace StorkStudios.DataWaste
         private ScriptableObject telemetryErrorHandler;
 
         [Header("Sent data")]
-        [SerializeField]
-        [Tooltip("Check if there is a new game version available on the server and send game version in init package. Requires GameVersion singleton to be present in the project.")]
-        private bool handleGameVersion;
         [SerializeField]
         private bool sendInitPackage = true;
 
@@ -49,13 +49,7 @@ namespace StorkStudios.DataWaste
         [ReadOnly]
         private ServerStatus serverStatus = ServerStatus.Unknown;
 
-        private string playerId;
-
         private ITelemetryDebugHandler TelemetryDebugHandler => telemetryErrorHandler as ITelemetryDebugHandler;
-
-        public Action<Dictionary<string, object>> PreSendProcessor { set => preSendProcessor = value; }
-
-        private Action<Dictionary<string, object>> preSendProcessor;
 
         protected override void Awake()
         {
@@ -69,15 +63,17 @@ namespace StorkStudios.DataWaste
             {
                 TelemetryDebugHandler.OnWarning("Telemetry is enabled - it should be only enabled in production builds!");
             }
-            playerId = "editor";
 #else
-            playerId = GetPlayerId();
             if (TelemetryDebugHandler != null)
             {
-                TelemetryDebugHandler.OnInfo($"Telemetry running. PlayerId: {playerId}");
+                TelemetryDebugHandler.OnInfo($"Telemetry running");
             }
 #endif
             Init();
+            foreach (ITelemetryPlugin plugin in plugins)
+            {
+                plugin.OnTelemetryInitialized();
+            }
 
             base.Awake();
         }
@@ -99,7 +95,15 @@ namespace StorkStudios.DataWaste
                 return;
             }
 
-            SendTelemetryMessage(new TelemetryMessage("applicationQuit"));
+            SendTelemetryMessage(new TelemetryMessage(TelemetryMessageType.ApplicationQuit));
+        }
+
+        protected override void OnDestroy()
+        {
+            foreach (ITelemetryPlugin plugin in plugins)
+            {
+                plugin.OnBeforeTelemetryDestroyed();
+            }
         }
 
         public void SendTelemetryMessage(TelemetryMessage message)
@@ -112,20 +116,26 @@ namespace StorkStudios.DataWaste
                 return;
             }
 
+            foreach (ITelemetryPlugin plugin in plugins)
+            {
+                plugin.OnBeforeMessageSent(message);
+            }
+
             Dictionary<string, object> data = new Dictionary<string, object>
             {
-                { "playerId", playerId },
                 { "timestamp", DateTime.UtcNow },
                 { "data", message.Data }
             };
-            preSendProcessor?.Invoke(data);
             UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
                 JsonConvert.SerializeObject(data),
                 "application/json");
             StartCoroutine(HandleRequest(request));
         }
 
-        public void GetData(string path, Action<string> callback, Action<string> errorCallback = null)
+        /**
+         * TODO: komentarz API
+         */
+        public void GetData<T>(string path, Action<T> callback, Action<string> errorCallback = null) where T : class
         {
             if (!enableTelemetry || serverStatus == ServerStatus.Offline)
             {
@@ -136,7 +146,16 @@ namespace StorkStudios.DataWaste
             StartCoroutine(HandleRequest(request,
                 (result) =>
                 {
-                    callback(result);
+                    T deserializedResult;
+                    if (typeof(T) == typeof(string))
+                    {
+                        deserializedResult = result as T;
+                    }
+                    else
+                    {
+                        deserializedResult = JsonConvert.DeserializeObject<T>(result);
+                    }
+                    callback(deserializedResult);
                 },
                 errorCallback));
         }
@@ -190,57 +209,19 @@ namespace StorkStudios.DataWaste
                     {
                         TelemetryDebugHandler.OnInfo("Telemetry server is running");
                     }
-                    if (handleGameVersion)
-                    {
-                        CheckNewGameVersion();
-                    }
-                }
-            }));
-        }
-
-        private void CheckNewGameVersion()
-        {
-            if (GameVersion.Instance == null)
-            {
-                if (TelemetryDebugHandler != null)
-                {
-                    TelemetryDebugHandler.OnError("GameVersion singleton not found, can't check game version. Disable version handling or create GameVersion singleton in Resources folder.");
-                }
-                return;
-            }
-            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/version");
-            StartCoroutine(HandleRequest(request, (result) =>
-            {
-                if (result == null)
-                {
-                    return;
-                }
-
-                GameVersionData gameVersion = JsonConvert.DeserializeObject<GameVersionData>(result);
-                if (gameVersion.VersionIndex > GameVersion.Instance.VersionIndex)
-                {
-                    if (TelemetryDebugHandler != null)
-                    {
-                        TelemetryDebugHandler.OnInfo($"New game version is available - {gameVersion.VersionName}");
-                    }
-                    GameVersion.Instance.NewestAvailableVersion = gameVersion;
                 }
             }));
         }
 
         private void SendApplicationStartMessage()
         {
-            TelemetryMessage message = new TelemetryMessage("applicationStart");
-            if (handleGameVersion && GameVersion.Instance != null)
-            {
-                message.AddProperty("gameVersion", GameVersion.Instance.VersionText);
-            }
+            TelemetryMessage message = new TelemetryMessage(TelemetryMessageType.ApplicationStart);
             SendTelemetryMessage(message);
         }
 
         private void SendSystemInfoMessage()
         {
-            TelemetryMessage message = new TelemetryMessage("systemInfo");
+            TelemetryMessage message = new TelemetryMessage(TelemetryMessageType.SystemInfo);
             Type systemInfoType = typeof(SystemInfo);
             foreach (PropertyInfo info in systemInfoType.GetProperties(BindingFlags.Public | BindingFlags.Static))
             {
@@ -249,20 +230,7 @@ namespace StorkStudios.DataWaste
             SendTelemetryMessage(message);
         }
 
-        private string GetPlayerId()
-        {
-            if (PlayerPrefs.HasKey("playerId"))
-            {
-                return PlayerPrefs.GetString("playerId");
-            }
-            else
-            {
-                string id = Guid.NewGuid().ToString();
-                PlayerPrefs.SetString("playerId", id);
-                return id;
-            }
-        }
-
+#if UNITY_EDITOR
         [InvokeButton("Test server")]
         private void TestServerStatus()
         {
@@ -285,5 +253,6 @@ namespace StorkStudios.DataWaste
                 }
             }));
         }
+#endif
     }
 }

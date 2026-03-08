@@ -9,6 +9,7 @@ namespace StorkStudios.DataWaste
         private Dictionary<string, object> data;
 
         public object Data => data;
+        public string MessageType => data["type"] as string;
 
         public TelemetryMessage(string type)
         {
