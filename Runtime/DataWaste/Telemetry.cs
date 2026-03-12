@@ -34,7 +34,6 @@ namespace StorkStudios.DataWaste
 
         [SerializeField]
         [RequireInterface(typeof(ITelemetryDebugHandler))]
-        [NotNull]
         private ScriptableObject telemetryErrorHandler;
 
         [Header("Sent data")]
