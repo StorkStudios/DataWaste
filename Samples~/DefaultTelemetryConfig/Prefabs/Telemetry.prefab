@@ -53,7 +53,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c46bf5c9bbc4f6d45b05e9905c03d972, type: 2}
   - {fileID: 11400000, guid: ebaedf57319c607448a9873208285748, type: 2}
   - {fileID: 11400000, guid: 673ec2a0b3cfe9543870d71a71a86515, type: 2}
-  telemetryErrorHandler: {fileID: 11400000, guid: 6836188e519c3ad45a8d005e0e66243f, type: 2}
+  telemetryErrorHandler: {fileID: 0}
   sendInitPackage: 1
   debugInfo: 1
   serverStatus: 0
