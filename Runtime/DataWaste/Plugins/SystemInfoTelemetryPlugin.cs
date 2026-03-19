@@ -13,6 +13,10 @@ namespace StorkStudios.DataWaste
             SendSystemInfoMessage();
         }
 
+        public void OnBeforeTelemetryDestroyed() { }
+
+        public void OnBeforeMessageSent(TelemetryMessage message) { }
+
         private void SendSystemInfoMessage()
         {
             TelemetryMessage message = new(TelemetryMessageType.SystemInfo);

@@ -13,6 +13,8 @@ namespace StorkStudios.DataWaste
             message.AddProperty("playerId", playerId);
         }
 
+        public void OnBeforeTelemetryDestroyed() { }
+
         public void OnTelemetryInitialized()
         {
 #if UNITY_EDITOR

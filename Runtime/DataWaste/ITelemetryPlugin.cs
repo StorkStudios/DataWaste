@@ -4,19 +4,10 @@ namespace StorkStudios.DataWaste
 {
     public interface ITelemetryPlugin
     {
-        public virtual void OnBeforeMessageSent(TelemetryMessage message)
-        {
+        public void OnTelemetryInitialized();
 
-        }
+        public void OnBeforeMessageSent(TelemetryMessage message);
 
-        public virtual void OnTelemetryInitialized()
-        {
-
-        }
-
-        public virtual void OnBeforeTelemetryDestroyed()
-        {
-
-        }
+        public void OnBeforeTelemetryDestroyed();
     }
 }

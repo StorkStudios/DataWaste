@@ -92,7 +92,7 @@ namespace StorkStudios.DataWaste
                 return;
             }
 
-            SendTelemetryMessage(new TelemetryMessage(TelemetryMessageType.ApplicationQuit));
+            SendTelemetryMessage(new(TelemetryMessageType.ApplicationQuit));
         }
 
         protected override void OnDestroy()
@@ -101,12 +101,14 @@ namespace StorkStudios.DataWaste
             {
                 plugin.OnBeforeTelemetryDestroyed();
             }
+
+            base.OnDestroy();
         }
 
-        /**
-         * Send a telemetry message to the server.
-         * The method does nothing if the server is offline or telemetry is disabled so no checks are required before calling it.
-         */
+        /// <summary>
+        /// Send a telemetry message to the server.
+        /// The method does nothing if the server is offline or telemetry is disabled so no checks are required before calling it.
+        /// </summary>
         public void SendTelemetryMessage(TelemetryMessage message)
         {
             /*
@@ -124,7 +126,7 @@ namespace StorkStudios.DataWaste
                 plugin.OnBeforeMessageSent(message);
             }
 
-            Dictionary<string, object> data = new Dictionary<string, object>
+            Dictionary<string, object> data = new()
             {
                 { "timestamp", DateTime.UtcNow },
                 { "data", message.Data }
@@ -135,13 +137,12 @@ namespace StorkStudios.DataWaste
             StartCoroutine(HandleRequest(request));
         }
 
-        /**
-         * Fetch data from the telemetry server. The endpoint path is "/extras/gameId".
-         * 
-         * \param path Path to the specific resources. It will be added to the end of the request URL.
-         * \param callback Callback function called after receiving the data.
-         * \param errorCallback Callback function called after receiving an error response.
-         */
+        /// <summary>
+        /// Fetch data from the telemetry server. The endpoint path is "/extras/gameId".
+        /// </summary> 
+        /// <param name="callback"> Path to the specific resources. It will be added to the end of the request URL.</param>
+        /// <param name="errorCallback"> Callback function called after receiving the data.</param>
+        /// <param name="path"> Callback function called after receiving an error response.</param>
         public void GetData<T>(string path, Action<T> callback, Action<string> errorCallback = null) where T : class
         {
             if (!enableTelemetry || serverStatus == ServerStatus.Offline)
@@ -219,7 +220,7 @@ namespace StorkStudios.DataWaste
 
         private void SendApplicationStartMessage()
         {
-            TelemetryMessage message = new TelemetryMessage(TelemetryMessageType.ApplicationStart);
+            TelemetryMessage message = new(TelemetryMessageType.ApplicationStart);
             SendTelemetryMessage(message);
         }
 

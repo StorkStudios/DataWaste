@@ -12,7 +12,7 @@ namespace StorkStudios.DataWaste
         {
             CheckNewGameVersion();
         }
-        
+
         public void OnBeforeMessageSent(TelemetryMessage message)
         {
             if (message.MessageType == TelemetryMessageType.ApplicationStart)
@@ -20,6 +20,8 @@ namespace StorkStudios.DataWaste
                 message.AddProperty(GameVersionPropertyName, GameVersion.Instance.VersionText);
             }
         }
+
+        public void OnBeforeTelemetryDestroyed() { }
 
         private void CheckNewGameVersion()
         {

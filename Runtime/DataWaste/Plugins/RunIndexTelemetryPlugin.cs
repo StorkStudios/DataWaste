@@ -3,7 +3,7 @@ using UnityEngine;
 namespace StorkStudios.DataWaste
 {
     [CreateAssetMenu(fileName = "RunIdTelemetryPlugin", menuName = "StorkStudios/DataWaste/Telemetry plugins/RunIdTelemetryPlugin")]
-    public class RunIdTelemetryPlugin : ScriptableObject, ITelemetryPlugin
+    public class RunIndexTelemetryPlugin : ScriptableObject, ITelemetryPlugin
     {
         private int runIndex;
 
@@ -17,12 +17,14 @@ namespace StorkStudios.DataWaste
             runIndex = GetAndUpdateRunIndex();
         }
 
+        public void OnBeforeTelemetryDestroyed() { }
+
         private int GetAndUpdateRunIndex()
         {
-            int idx = PlayerPrefs.GetInt("RunIndex", 0);
-            idx++;
-            PlayerPrefs.SetInt("RunIndex", idx);
-            return idx;
+            int index = PlayerPrefs.GetInt("RunIndex", 0);
+            index++;
+            PlayerPrefs.SetInt("RunIndex", index);
+            return index;
         }
     }
 }
