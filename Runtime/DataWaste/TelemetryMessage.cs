@@ -4,11 +4,19 @@ using UnityEngine;
 
 namespace StorkStudios.DataWaste
 {
+    /// <summary>
+    /// Helper class used for structuring the telemetry data.
+    /// </summary>
+    /// <remarks>
+    /// Each message has a type that is a regular field in the message. The type can be used by <see cref="ITelemetryPlugin"/> to modify messages.
+    /// Common message types are listed in <see cref="TelemetryMessageType"/>.
+    /// </remarks>
     public class TelemetryMessage : IData
     {
         private Dictionary<string, object> data;
 
         public object Data => data;
+        public string MessageType => data["type"] as string;
 
         public TelemetryMessage(string type)
         {

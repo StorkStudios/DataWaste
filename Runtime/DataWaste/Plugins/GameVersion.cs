@@ -6,7 +6,7 @@ using StorkStudios.CoreNest;
 
 namespace StorkStudios.DataWaste
 {
-    [CreateAssetMenu(fileName = "GameVersion", menuName = "Singletons/Game version")]
+    [CreateAssetMenu(fileName = "GameVersion", menuName = "StorkStudios/DataWaste/Game version")]
     public class GameVersion : ScriptableObjectSingleton<GameVersion>
     {
         [SerializeField]
@@ -19,22 +19,6 @@ namespace StorkStudios.DataWaste
         private int versionIndex;
         public int VersionIndex => versionIndex;
 
-        public event Action<GameVersionData> NewVersionAvailableEvent;
-
-        public GameVersionData NewestAvailableVersion
-        {
-            set
-            {
-                if (newestAvailableVersion == null || value.VersionIndex != newestAvailableVersion.VersionIndex)
-                {
-                    NewVersionAvailableEvent?.Invoke(value);
-                }
-                newestAvailableVersion = value;
-            }
-
-            get => newestAvailableVersion;
-        }
-
-        private GameVersionData newestAvailableVersion;
+        public ObservableVariable<GameVersionData> NewestAvailableVersion = new();
     }
 }
