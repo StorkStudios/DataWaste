@@ -9,7 +9,7 @@ using UnityEngine.Networking;
 
 namespace StorkStudios.DataWaste
 {
-    public class Telemetry : Singleton<Telemetry>
+    public class Telemetry : PersistentSingleton<Telemetry>
     {
         private enum ServerStatus
         {
@@ -18,56 +18,24 @@ namespace StorkStudios.DataWaste
             Offline
         }
 
-        [Header("Config")]
-        [SerializeField]
-        [Tooltip("This should be disabled during development, to limit load on the telemetry server")]
-        private bool enableTelemetry;
-        [SerializeField]
-        private string telemetryServerAddress;
-        [SerializeField]
-        private string gameId;
-        [SerializeField]
-        private int timeout;
-        [SerializeField]
-        [RequireInterface(typeof(ITelemetryPlugin))]
-        private List<ScriptableObject> plugins;
-
-        [SerializeField]
-        [RequireInterface(typeof(ITelemetryDebugHandler))]
-        private ScriptableObject telemetryErrorHandler;
-
-        [Header("Sent data")]
-        [SerializeField]
-        private bool sendInitPackage = true;
-
-        [Header("Debug")]
-        [SerializeField]
-        private bool debugInfo;
-
         [SerializeField]
         [ReadOnly]
         private ServerStatus serverStatus = ServerStatus.Unknown;
 
-        private ITelemetryDebugHandler TelemetryDebugHandler => telemetryErrorHandler as ITelemetryDebugHandler;
-
         protected override void Awake()
         {
-            if (!enableTelemetry)
+            if (!TelemetryConfiguration.Instance.EnableTelemetry)
             {
                 return;
             }
-            if (TelemetryDebugHandler == null)
-            {
-                telemetryErrorHandler = ScriptableObject.CreateInstance(typeof(DefaultTelemetryErrorHandler));
-            }
 
 #if UNITY_EDITOR
-            TelemetryDebugHandler.OnWarning("Telemetry is enabled - it should be only enabled in production builds!");
+            TelemetryConfiguration.Instance.TelemetryErrorHandler.OnWarning("Telemetry is enabled - it should be only enabled in production builds!");
 #else
-            TelemetryDebugHandler.OnInfo($"Telemetry running");
+            TelemetryConfiguration.Instance.TelemetryErrorHandler.OnInfo($"Telemetry running");
 #endif
             Init();
-            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
+            foreach (ITelemetryPlugin plugin in TelemetryConfiguration.Instance.Plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnTelemetryInitialized();
             }
@@ -77,7 +45,7 @@ namespace StorkStudios.DataWaste
 
         private void Start()
         {
-            if (!enableTelemetry || !sendInitPackage)
+            if (!TelemetryConfiguration.Instance.EnableTelemetry || !TelemetryConfiguration.Instance.SendInitPackage)
             {
                 return;
             }
@@ -87,7 +55,7 @@ namespace StorkStudios.DataWaste
 
         private void OnApplicationQuit()
         {
-            if (!enableTelemetry || serverStatus == ServerStatus.Offline)
+            if (!TelemetryConfiguration.Instance.EnableTelemetry || serverStatus == ServerStatus.Offline)
             {
                 return;
             }
@@ -97,7 +65,7 @@ namespace StorkStudios.DataWaste
 
         protected override void OnDestroy()
         {
-            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
+            foreach (ITelemetryPlugin plugin in TelemetryConfiguration.Instance.Plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnBeforeTelemetryDestroyed();
             }
@@ -116,12 +84,12 @@ namespace StorkStudios.DataWaste
              * If server is running it will get the message, if it's not we will handle the error elswhere.
              * When server status is determined as offline, we stop.
             */
-            if (!enableTelemetry || serverStatus == ServerStatus.Offline)
+            if (!TelemetryConfiguration.Instance.EnableTelemetry || serverStatus == ServerStatus.Offline)
             {
                 return;
             }
 
-            foreach (ITelemetryPlugin plugin in plugins.Cast<ITelemetryPlugin>())
+            foreach (ITelemetryPlugin plugin in TelemetryConfiguration.Instance.Plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnBeforeMessageSent(message);
             }
@@ -131,7 +99,7 @@ namespace StorkStudios.DataWaste
                 { "timestamp", DateTime.UtcNow },
                 { "data", message.Data }
             };
-            UnityWebRequest request = UnityWebRequest.Post(telemetryServerAddress + $"/telemetry/{gameId}",
+            UnityWebRequest request = UnityWebRequest.Post(TelemetryConfiguration.Instance.TelemetryServerAddress + $"/telemetry/{TelemetryConfiguration.Instance.GameId}",
                 JsonConvert.SerializeObject(data),
                 "application/json");
             StartCoroutine(HandleRequest(request));
@@ -145,12 +113,12 @@ namespace StorkStudios.DataWaste
         /// <param name="path"> Callback function called after receiving an error response.</param>
         public void GetData<T>(string path, Action<T> callback, Action<string> errorCallback = null) where T : class
         {
-            if (!enableTelemetry || serverStatus == ServerStatus.Offline)
+            if (!TelemetryConfiguration.Instance.EnableTelemetry || serverStatus == ServerStatus.Offline)
             {
                 return;
             }
 
-            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + $"/extras/{gameId}/{path}");
+            UnityWebRequest request = UnityWebRequest.Get(TelemetryConfiguration.Instance.TelemetryServerAddress + $"/extras/{TelemetryConfiguration.Instance.GameId}/{path}");
             StartCoroutine(HandleRequest(request,
                 (result) =>
                 {
@@ -170,7 +138,7 @@ namespace StorkStudios.DataWaste
 
         private IEnumerator HandleRequest(UnityWebRequest request, Action<string> callback = null, Action<string> errorCallback = null)
         {
-            request.timeout = timeout;
+            request.timeout = TelemetryConfiguration.Instance.Timeout;
 
             yield return request.SendWebRequest();
 
@@ -189,30 +157,30 @@ namespace StorkStudios.DataWaste
                 }
                 else
                 {
-                    TelemetryDebugHandler.OnError(request.error);
+                    TelemetryConfiguration.Instance.TelemetryErrorHandler.OnError(request.error);
                 }
             }
         }
 
         private void Init()
         {
-            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + "/status");
+            UnityWebRequest request = UnityWebRequest.Get(TelemetryConfiguration.Instance.TelemetryServerAddress + "/status");
             StartCoroutine(HandleRequest(request, (result) =>
             {
                 if (result == null)
                 {
                     serverStatus = ServerStatus.Offline;
-                    if (debugInfo)
+                    if (TelemetryConfiguration.Instance.PrintDebugInfo)
                     {
-                        TelemetryDebugHandler.OnWarning("Telemetry server is unavailable");
+                        TelemetryConfiguration.Instance.TelemetryErrorHandler.OnWarning("Telemetry server is unavailable");
                     }
                 }
                 else
                 {
                     serverStatus = ServerStatus.Online;
-                    if (debugInfo)
+                    if (TelemetryConfiguration.Instance.PrintDebugInfo)
                     {
-                        TelemetryDebugHandler.OnInfo("Telemetry server is running");
+                        TelemetryConfiguration.Instance.TelemetryErrorHandler.OnInfo("Telemetry server is running");
                     }
                 }
             }));
@@ -228,40 +196,19 @@ namespace StorkStudios.DataWaste
         [InvokeButton("Test server")]
         private void TestServerStatus()
         {
-            UnityWebRequest request = UnityWebRequest.Get(telemetryServerAddress + "/status");
-            if (TelemetryDebugHandler == null)
-            {
-                telemetryErrorHandler = ScriptableObject.CreateInstance(typeof(DefaultTelemetryErrorHandler));
-            }
+            UnityWebRequest request = UnityWebRequest.Get(TelemetryConfiguration.Instance.TelemetryServerAddress + "/status");
             StartCoroutine(HandleRequest(request, (result) =>
             {
                 if (result == null)
                 {
-                    TelemetryDebugHandler.OnWarning("Telemetry server is unavailable");
+                    TelemetryConfiguration.Instance.TelemetryErrorHandler.OnWarning("Telemetry server is unavailable");
                 }
                 else
                 {
-                    TelemetryDebugHandler.OnInfo("Telemetry server is running");
+                    TelemetryConfiguration.Instance.TelemetryErrorHandler.OnInfo("Telemetry server is running");
                 }
             }));
         }
 #endif
-        private class DefaultTelemetryErrorHandler : ScriptableObject, ITelemetryDebugHandler
-        {
-            public void OnError(string message)
-            {
-                Debug.LogError($"Telemetry error: {message}");
-            }
-
-            public void OnInfo(string message)
-            {
-                Debug.Log($"Telemetry info: {message}");
-            }
-
-            public void OnWarning(string message)
-            {
-                Debug.LogWarning($"Telemetry warining: {message}");
-            }
-        }
     }
 }
