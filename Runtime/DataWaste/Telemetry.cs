@@ -99,18 +99,26 @@ namespace StorkStudios.DataWaste
                 { "timestamp", DateTime.UtcNow },
                 { "data", message.Data }
             };
-            UnityWebRequest request = UnityWebRequest.Post(TelemetryConfiguration.Instance.TelemetryServerAddress + $"/telemetry/{TelemetryConfiguration.Instance.GameId}",
-                JsonConvert.SerializeObject(data),
-                "application/json");
-            StartCoroutine(HandleRequest(request));
+            try
+            {
+                UnityWebRequest request = UnityWebRequest.Post(
+                    TelemetryConfiguration.Instance.TelemetryServerAddress + $"/telemetry/{TelemetryConfiguration.Instance.GameId}",
+                    JsonConvert.SerializeObject(data),
+                    "application/json");
+                StartCoroutine(HandleRequest(request));
+            }
+            catch (Exception ex)
+            {
+                TelemetryConfiguration.Instance.TelemetryErrorHandler.OnError(ex.ToString());
+            }
         }
 
         /// <summary>
         /// Fetch data from the telemetry server. The endpoint path is "/extras/gameId".
         /// </summary> 
-        /// <param name="callback"> Path to the specific resources. It will be added to the end of the request URL.</param>
-        /// <param name="errorCallback"> Callback function called after receiving the data.</param>
-        /// <param name="path"> Callback function called after receiving an error response.</param>
+        /// <param name="path"> Path to the specific resources. It will be added to the end of the request URL.</param>
+        /// <param name="callback"> Callback function called after receiving the data.</param>
+        /// <param name="errorCallback"> Callback function called after receiving an error response.</param>
         public void GetData<T>(string path, Action<T> callback, Action<string> errorCallback = null) where T : class
         {
             if (!TelemetryConfiguration.Instance.EnableTelemetry || serverStatus == ServerStatus.Offline)
@@ -126,12 +134,27 @@ namespace StorkStudios.DataWaste
                     if (typeof(T) == typeof(string))
                     {
                         deserializedResult = result as T;
+                        callback?.Invoke(deserializedResult);
                     }
                     else
                     {
-                        deserializedResult = JsonConvert.DeserializeObject<T>(result);
+                        try
+                        {
+                            deserializedResult = JsonConvert.DeserializeObject<T>(result);
+                            callback?.Invoke(deserializedResult);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (errorCallback != null)
+                            {
+                                errorCallback(ex.ToString());
+                            }
+                            else
+                            {
+                                TelemetryConfiguration.Instance.TelemetryErrorHandler.OnError(ex.ToString());
+                            }
+                        }
                     }
-                    callback(deserializedResult);
                 },
                 errorCallback));
         }
@@ -144,10 +167,7 @@ namespace StorkStudios.DataWaste
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                if (callback != null)
-                {
-                    callback(request.downloadHandler.text);
-                }
+                callback?.Invoke(request.downloadHandler.text);
             }
             else
             {

@@ -2,7 +2,7 @@
   "name": "com.storkstudios.datawaste",
   "version": "1.1.0",
   "displayName": "Data Waste",
-  "description": "Stork'Studios' network communication system. Created to simplify performing network related tasks in our games.\nUse cases include telemetry and fetching data from a server in runtime.\n\nA prefab configured with some reasonable defaults is available in samples.\n\nSources available at https://github.com/StorkStudios/DataWaste",
+  "description": "Stork'Studios' network communication system. Created to simplify performing network related tasks in our games.\nUse cases include telemetry and fetching data from a server in runtime.\n\nA prefab configured with some reasonable defaults is available in samples.\n\nUnity Converters for Newtonsoft.Json package may be useful for serializing Unity data types. It is available at https://openupm.com/packages/jillejr.newtonsoft.json-for-unity.converters/\n\nSources available at https://github.com/StorkStudios/DataWaste",
   "unity": "6000.0",
   "author": {
     "name": "Stork'Studios",
