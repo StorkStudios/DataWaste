@@ -11,6 +11,8 @@ namespace StorkStudios.DataWaste
 {
     public class Telemetry : PersistentSingleton<Telemetry>
     {
+        private const string serverStatusOkString = "OK";
+        
         private enum ServerStatus
         {
             Unknown,
@@ -187,7 +189,7 @@ namespace StorkStudios.DataWaste
             UnityWebRequest request = UnityWebRequest.Get(TelemetryConfiguration.Instance.TelemetryServerAddress + "/status");
             StartCoroutine(HandleRequest(request, (result) =>
             {
-                if (result == null)
+                if (result == null || result != serverStatusOkString)
                 {
                     serverStatus = ServerStatus.Offline;
                     if (TelemetryConfiguration.Instance.PrintDebugInfo)
@@ -223,9 +225,13 @@ namespace StorkStudios.DataWaste
                 {
                     TelemetryConfiguration.Instance.TelemetryErrorHandler.OnWarning("Telemetry server is unavailable");
                 }
-                else
+                else if (result == serverStatusOkString)
                 {
                     TelemetryConfiguration.Instance.TelemetryErrorHandler.OnInfo("Telemetry server is running");
+                }
+                else
+                {
+                    TelemetryConfiguration.Instance.TelemetryErrorHandler.OnWarning($"Unexpected response from the telemetry server: {result}");
                 }
             }));
         }
