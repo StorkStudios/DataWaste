@@ -19,6 +19,7 @@ namespace StorkStudios.DataWaste
         private int versionIndex;
         public int VersionIndex => versionIndex;
 
-        public ObservableVariable<GameVersionData> NewestAvailableVersion = new();
+        private ObservableVariable<GameVersionData> newestAvailableVersion = new();
+        public ObservableVariable<GameVersionData> NewestAvailableVersion => newestAvailableVersion;
     }
 }
