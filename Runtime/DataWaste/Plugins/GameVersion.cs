@@ -1,13 +1,11 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using StorkStudios.CoreNest;
 
 namespace StorkStudios.DataWaste
 {
+    [Singleton]
     [CreateAssetMenu(fileName = "GameVersion", menuName = "StorkStudios/DataWaste/Game version")]
-    public class GameVersion : ScriptableObjectSingleton<GameVersion>
+    public sealed partial class GameVersion : ScriptableObject
     {
         [SerializeField]
         [Tooltip("Version name that is diplayed in game")]
