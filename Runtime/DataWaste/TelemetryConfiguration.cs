@@ -4,8 +4,9 @@ using UnityEngine;
 
 namespace StorkStudios.DataWaste
 {
+    [Singleton]
     [CreateAssetMenu(fileName = "TelemetryConfiguration", menuName = "StorkStudios/DataWaste/Telemetry configuration")]
-    public class TelemetryConfiguration : ScriptableObjectSingleton<TelemetryConfiguration>
+    public sealed partial class TelemetryConfiguration : ScriptableObject
     {
         [Header("Config")]
         [SerializeField]

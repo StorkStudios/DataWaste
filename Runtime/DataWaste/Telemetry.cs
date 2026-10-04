@@ -9,7 +9,8 @@ using UnityEngine.Networking;
 
 namespace StorkStudios.DataWaste
 {
-    public class Telemetry : PersistentSingleton<Telemetry>
+    [Singleton(persistent: true)]
+    public sealed partial class Telemetry : MonoBehaviour
     {
         private const string serverStatusOkString = "OK";
         
@@ -24,7 +25,7 @@ namespace StorkStudios.DataWaste
         [ReadOnly]
         private ServerStatus serverStatus = ServerStatus.Unknown;
 
-        protected override void Awake()
+        private void BeforeAwake()
         {
             if (!TelemetryConfiguration.Instance.EnableTelemetry)
             {
@@ -41,8 +42,6 @@ namespace StorkStudios.DataWaste
             {
                 plugin.OnTelemetryInitialized();
             }
-
-            base.Awake();
         }
 
         private void Start()
@@ -65,14 +64,12 @@ namespace StorkStudios.DataWaste
             SendTelemetryMessage(new(TelemetryMessageType.ApplicationQuit));
         }
 
-        protected override void OnDestroy()
+        private void BeforeDestroy()
         {
             foreach (ITelemetryPlugin plugin in TelemetryConfiguration.Instance.Plugins.Cast<ITelemetryPlugin>())
             {
                 plugin.OnBeforeTelemetryDestroyed();
             }
-
-            base.OnDestroy();
         }
 
         /// <summary>
