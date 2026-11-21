@@ -8,10 +8,10 @@ namespace StorkStudios.DataWaste
     [CreateAssetMenu(fileName = "TelemetryConfiguration", menuName = "StorkStudios/DataWaste/Telemetry configuration")]
     public sealed partial class TelemetryConfiguration : ScriptableObject
     {
-        [Header("Config")]
-        [SerializeField]
-        [Tooltip("This should be disabled during development, to limit load on the telemetry server")]
-        private bool enableTelemetry;
+        [field: Header("Config")]
+        [field: SerializeField]
+        [field: Tooltip("This should be disabled during development, to limit load on the telemetry server")]
+        public bool EnableTelemetry;
         [SerializeField]
         private string telemetryServerAddress;
         [SerializeField]
@@ -33,8 +33,7 @@ namespace StorkStudios.DataWaste
         [Header("Debug")]
         [SerializeField]
         private bool printDebugInfo;
-
-        public bool EnableTelemetry => enableTelemetry;
+        
         public string TelemetryServerAddress => telemetryServerAddress;
         public string GameId => gameId;
         public int Timeout => timeout;
