@@ -11,7 +11,7 @@ namespace StorkStudios.DataWaste
         [field: Header("Config")]
         [field: SerializeField]
         [field: Tooltip("This should be disabled during development, to limit load on the telemetry server")]
-        public bool EnableTelemetry;
+        public bool EnableTelemetry { get; set; }
         [SerializeField]
         private string telemetryServerAddress;
         [SerializeField]
@@ -33,7 +33,7 @@ namespace StorkStudios.DataWaste
         [Header("Debug")]
         [SerializeField]
         private bool printDebugInfo;
-        
+
         public string TelemetryServerAddress => telemetryServerAddress;
         public string GameId => gameId;
         public int Timeout => timeout;
@@ -67,7 +67,7 @@ namespace StorkStudios.DataWaste
 
             public void OnWarning(string message)
             {
-                Debug.LogWarning($"Telemetry warining: {message}");
+                Debug.LogWarning($"Telemetry warning: {message}");
             }
         }
     }
